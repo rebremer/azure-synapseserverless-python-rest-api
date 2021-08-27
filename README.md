@@ -5,15 +5,15 @@ languages:
 - tsql
 - sql
 - json
-- external tables
 products:
 - azure
+- azure-cli
 - vs-code
 - azure-synapse
 - azure-app-service
 - azure-app-service-web
 description: "Creating a modern REST API with Python and Azure Synapse, using Flask and Visual Studio Code"
-urlFragment: "azure-sql-db-python-rest-api"
+urlFragment: "azure-synapseserverless-python-rest-api"
 ---
 
 # Creating a REST API with Python on Synapse Serverless pools using external tables
@@ -27,29 +27,30 @@ Guidance on onboarding samples to docs.microsoft.com/samples: https://review.doc
 
 Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
 -->
-Based on this git repo by Davide Mauri, see [blogpost here](https://techcommunity.microsoft.com/t5/azure-sql/building-rest-api-with-python-flask-and-azure-sql/ba-p/1056637) and [gitrep here](https://github.com/Azure-Samples/azure-sql-db-python-rest-api)
+Based on work by Davide Mauri, see [blogpost here](https://techcommunity.microsoft.com/t5/azure-sql/building-rest-api-with-python-flask-and-azure-sql/ba-p/1056637) and [gitrep here](https://github.com/Azure-Samples/azure-sql-db-python-rest-api)
 
-Documentation: TODO
-
-
-
-Thanks to native JSON support, creating a REST API with Azure Synapse and Python is really a matter of a few lines of code. Take a look at `app.py` to easy it is!
-
-
+Thanks to native JSON support, creating a REST API with Azure Synapse external tables and Python is really a matter of a few lines of code. Take a look at `app.py` to easy it is!
 
 Wondering what's the magic behind? The sample uses the well known [Flask](https://flask.palletsprojects.com/en/1.1.x/) micro-framework and the [flask-restful](https://flask-restful.readthedocs.io/en/latest/) package to easily implement REST APIs. Beside that the [native JSON support that Azure SQL provides](https://docs.microsoft.com/en-us/azure/sql-database/sql-database-json-features) does all the heavy lifting so sending data back and forth to the database is as easy as sending a JSON message.
 
 ## Install Synapse 
 
-In order to run this sample, the WideWorldImporters database is needed. Install WideWorldImporters sample database:
+In order to run this sample, an Azure Synapse Workspace is needed:
 
-[Restore WideWorldImporters Database](https://github.com/yorek/azure-sql-db-samples#restore-wideworldimporters-database)
+[Create Synapse workspace](https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-workspace)
 
-## Add Run SQL scrips
+## Add data to Synapse primarey storage account
 
-Once the sample database has been installed, you need to add some stored procedures that will be called from Python. The SQL code is available here:
+Create a FileSystem named `taxidata` and add the data files 
 
-`./sql/WideWorldImportersUpdates.sql`
+`./data/part-00005-tid-8364420724365899593-b5fafbac-8fd5-4869-a6b6-e607867d9673-6-1-c000.snappy.parquet` from this git repo to this repository
+
+## Run SQL scripts
+
+Once the Synapse Workspace has been established database has been installed, you need to add create external tables and stored procedures that will be called from Python. The SQL code is available here:
+
+`./sql/1_create_external_table.sql`
+`./sql/2_stored_procedures.sql`
 
 If you need any help in executing the SQL script, you can find a Quickstart here: [Quickstart: Use Azure Data Studio to connect and query Azure SQL database](https://docs.microsoft.com/en-us/sql/azure-data-studio/quickstart-sql-database)
 
@@ -79,20 +80,24 @@ Linux:
 
 ```bash
 export FLASK_ENV="development"
-export SQLAZURECONNSTR_WWIF="<your-connection-string>"
+export SQLAZURECONNSTR_TAXI="<your-connection-string>"
+# Bearer token from user that has contributor rights on Azure Synapse workspace, can be generated using Azure CLI as follows
+export TOKEN=$(az account get-access-token --resource=https://database.windows.net/ --query accessToken)
 ```
 
 Windows:
 
 ```powershell
 $Env:FLASK_ENV="development"
-$Env:SQLAZURECONNSTR_WWIF="<your-connection-string>"
+$Env:SQLAZURECONNSTR_TAXI="<your-connection-string>"
+# Bearer token from user that has contributor rights on Azure Synapse workspace, can be generated using Azure CLI as follows
+$Env:TOKEN=az account get-access-token --resource=https://database.windows.net/ --query accessToken
 ```
 
 Your connection string is something like:
 
 ```
-DRIVER={ODBC Driver 17 for SQL Server};SERVER=<your-server-name>.database.windows.net;DATABASE=<your-database-name>;UID=PythonWebApp;PWD=a987REALLY#$%TRONGpa44w0rd
+DRIVER={ODBC Driver 17 for SQL Server};SERVER=<your-server-name>-ondemand.sql.azuresynapse.net;DATABASE=<your-database-name>
 ```
 
 Just replace `<your-server-name>` and `<your-database-name>` with the correct values for your environment.
@@ -112,31 +117,36 @@ Python will start the HTTP server and when everything is up and running you'll s
 Using a REST Client (like [Insomnia](https://insomnia.rest/), [Postman](https://www.getpostman.com/) or curl), you can now call your API, for example:
 
 ```bash
-curl -X GET http://localhost:5000/customer/123
+curl -X GET localhost:5000/taxidataall
+curl -X GET localhost:5000/taxidateprice/20
 ```
 
-and you'll get info on Customer 123:
+In the latter, you'll get info on total_amount 20:
 
 ```json
 [
     {
-        "CustomerID": 123,
-        "CustomerName": "Tailspin Toys (Roe Park, NY)",
-        "PhoneNumber": "(212) 555-0100",
-        "FaxNumber": "(212) 555-0101",
-        "WebsiteURL": "http://www.tailspintoys.com/RoePark",
-        "Delivery": {
-            "AddressLine1": "Shop 219",
-            "AddressLine2": "528 Persson Road",
-            "PostalCode": "90775"
-        }
+        "VendorID": 1,
+        "tpep_pickup_datetime": "2019-01-31T13:34:15",
+        "tpep_dropoff_datetime": "2019-01-31T13:55:37",
+        "passenger_count": 1,
+        "trip_distance": 3.2,
+        "RatecodeID": 1,
+        "store_and_fwd_flag": false,
+        "PULocationID": 236,
+        "DOLocationID": 263,
+        "payment_type": 1,
+        "fare_amount": 15.5,
+        "extra": 0.0,
+        "mta_tax": 0.5,
+        "tip_amount": 3.7,
+        "tolls_amount": 0.0,
+        "improvement_surcharge": 0.3,
+        "total_amount": 20.0,
+        "congestion_surcharge": 0.0
     }
 ]
 ```
-
-Check out more samples to test all implemented verbs here:
-
-[cUrl Samples](./sample-usage.md)
 
 ## Debug from Visual Studio Code
 
@@ -144,28 +154,35 @@ Debugging from Visual Studio Code is fully supported. Make sure you create an `.
 
 ```
 FLASK_ENV="development"
-SQLAZURECONNSTR_WWIF=""
+SQLAZURECONNSTR_TAXI=""
 ```
 
 and you'll be good to go.
 
 ## Deploy to Azure
 
-Now that your REST API solution is ready, it's time to deploy it on Azure so that anyone can take advantage of it. A detailed article on how you can that that is here:
-
-- [Deploying Python web apps to Azure App Services](https://medium.com/@GeekTrainer/deploying-python-web-apps-to-azure-app-services-413cc16d4d68)
-- [Quickstart: Create a Python app in Azure App Service on Linux](https://docs.microsoft.com/en-us/azure/app-service/containers/quickstart-python?tabs=bash)
-
-The only thing you have do in addition to what explained in the above articles is to add the connection string to the Azure Web App configuration. Using AZ CLI, for example:
+Now that your REST API solution is ready, it's time to deploy it on Azure so that anyone can take advantage of it. This can be done using the following simple command using the Azure CLI, see also [here](https://docs.microsoft.com/en-us/azure/app-service/quickstart-python?tabs=bash&pivots=python-framework-flask#deploy-the-sample):
 
 ```bash
-appName="azure-sql-db-python-rest-api"
+appName="<<your app name>>"
+resourceGroup="<<your resource group>>"
+az webapp up --sku B1 --name appName
+```
+
+Two more things you have do in addition to what explained in the above articles:
+
+### 1. Add connection string
+
+Connection string needs to be added to the Azure Web App configuration. Using AZ CLI, for example:
+
+```bash
+appName="your-app-name"
 resourceGroup="my-resource-group"
 
 az webapp config connection-string set \
     -g $resourceGroup \
     -n $appName \
-    --settings WWIF=$SQLAZURECONNSTR_WWIF \
+    --settings TAXI=$SQLAZURECONNSTR_TAXI \
     --connection-string-type=SQLAzure
 ```
 
@@ -175,7 +192,24 @@ Please note that connection string are accessible as environment variables from 
 
 https://docs.microsoft.com/en-us/azure/app-service/configure-common#connection-strings
 
-That's why the Python code in the sample look for `SQLAZURECONNSTR_WWIF` but the Shell script write the `WWIF` connection string name.
+That's why the Python code in the sample look for `SQLAZURECONNSTR_TAXI` but the Shell script write the `TAXI` connection string name.
+
+### 2. Assign Managed Identity to web app and grant rights to Synapse Serverless and underlying storage account
+
+First, enable managed Identity of web app, this can be done using following Azure CLI command:
+
+```bash
+az webapp identity assign -g $resourceGroup -n $appName
+```
+
+Then grant the Managed Identity ```Storage Blob Data Reader ``` rights to storage account where taxi data is stored. The name of the function app ```$appName``` can be used for as user that shall be granted rights, see [here](https://docs.microsoft.com/en-us/azure/storage/blobs/assign-azure-role-data-access?tabs=portal#assign-an-azure-role)
+
+Finally, run the web app managed identity shall also be granded righs to read data from the Synapse serverless pools and be able to execute the stored procedure.
+
+The SQL code is available here:
+
+`./sql/3_grant_WebApp_database_rights.sql`
+
 
 ## Connection Resiliency
 

@@ -1,11 +1,10 @@
-USE roboticsdemo; 
-CREATE USER [test-extsynapi-app] FROM EXTERNAL PROVIDER;                       
-ALTER ROLE [db_datareader] ADD MEMBER [test-extsynapi-app];
+CREATE USER [<<web app name>>] FROM EXTERNAL PROVIDER;                       
+ALTER ROLE [db_datareader] ADD MEMBER [<<web app name>>];
  
 GRANT EXECUTE ON OBJECT::dbo.get_taxidata
-    TO [test-extsynapi-app];  
+    TO [<<web app name>>];  
 GO  
 
 GRANT EXECUTE ON OBJECT::dbo.get_taxidataAmount
-    TO [test-extsynapi-app];  
+    TO [<<web app name>>];  
 GO 

@@ -42,25 +42,25 @@ class ConnectionManager(object):
     
     def __getConnection(self):
         if (self.__connection == None):
-            #application_name = ";APP={0}".format(socket.gethostname())  
-            #self.__connection = pyodbc.connect(os.environ['SQLAZURECONNSTR_WWIF'] + application_name)                  
 
-            #token = ""
-            # az account get-access-token --resource=https://database.windows.net/ --query accessToken
-            #accessToken = bytes(token, 'utf-8')
-            #exptoken = b""
-            #for i in accessToken:
-            #    exptoken += bytes({i})
-            #    exptoken += bytes(1)
-            #    tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
+            flask_env_setting = os.getenv('FLASK_ENV', 'webapp')
+            if flask_env_setting == 'development':
+                # az account get-access-token --resource=https://database.windows.net/ --query accessToken
+                #
+                token = os.environ['TOKEN']
+                token= token.replace('"','') # Make sure that unnecessary quotes are removed
+                accessToken = bytes(token, 'utf-8')
+                exptoken = b""
+                for i in accessToken:
+                    exptoken += bytes({i})
+                    exptoken += bytes(1)
+                    tokenstruct = struct.pack("=i", len(exptoken)) + exptoken
 
-            server  = "<<your logical sql server>>"
-            database = "<<your database>>"
-            #connstr = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database
-            #self.__connection = pyodbc.connect(connstr, attrs_before = { 1256:tokenstruct })
-            
-            connstr = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';Authentication=ActiveDirectoryMsi'
-            self.__connection = pyodbc.connect(connstr)
+                connstr = os.environ['SQLAZURECONNSTR_TAXI']
+                self.__connection = pyodbc.connect(connstr, attrs_before = { 1256:tokenstruct })
+            else:
+                connstr = os.environ['SQLAZURECONNSTR_TAXI'] + ';Authentication=ActiveDirectoryMsi'
+                self.__connection = pyodbc.connect(connstr)
 
         return self.__connection
 
