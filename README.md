@@ -1,21 +1,3 @@
----
-page_type: sample
-languages:
-- python
-- tsql
-- sql
-- json
-products:
-- azure
-- azure-cli
-- vs-code
-- azure-synapse
-- azure-app-service
-- azure-app-service-web
-description: "Creating a modern REST API with Python and Azure Synapse, using Flask and Visual Studio Code"
-urlFragment: "azure-synapseserverless-python-rest-api"
----
-
 # Creating a REST API with Python on Synapse Serverless pools using external tables
 
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -43,14 +25,18 @@ In order to run this sample, an Azure Synapse Workspace is needed:
 
 Create a FileSystem named `taxidata` and add the data files 
 
-`./data/part-00005-tid-8364420724365899593-b5fafbac-8fd5-4869-a6b6-e607867d9673-6-1-c000.snappy.parquet` from this git repo to this repository
+`./data/part-00005-tid-8364420724365899593-b5fafbac-8fd5-4869-a6b6-e607867d9673-6-1-c000.snappy.parquet` 
+
+from this git repo to this repository
 
 ## Run SQL scripts
 
 Once the Synapse Workspace has been established database has been installed, you need to add create external tables and stored procedures that will be called from Python. The SQL code is available here:
 
-`./sql/1_create_external_table.sql`
-`./sql/2_stored_procedures.sql`
+```
+./sql/1_create_external_table.sql
+./sql/2_stored_procedures.sql
+```
 
 If you need any help in executing the SQL script, you can find a Quickstart here: [Quickstart: Use Azure Data Studio to connect and query Azure SQL database](https://docs.microsoft.com/en-us/sql/azure-data-studio/quickstart-sql-database)
 
