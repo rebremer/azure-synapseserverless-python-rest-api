@@ -3,7 +3,7 @@ IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParq
 	WITH ( FORMAT_TYPE = PARQUET)
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'taxidata_<<your storage account attached to Synapse>>_dfs_core_windows_net') 
+IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'taxidata_testextsynapistor_dfs_core_windows_net') 
 	CREATE EXTERNAL DATA SOURCE [taxidata_testextsynapistor_dfs_core_windows_net] 
 	WITH (
 		LOCATION   = 'https://<<your storage account attached to Synapse>>.dfs.core.windows.net/taxidata', 
@@ -32,7 +32,7 @@ CREATE EXTERNAL TABLE taxidemo (
 	)
 	WITH (
 	LOCATION = '*/*.parquet',
-	DATA_SOURCE = [taxidata_<<your storage account attached to Synapse>>_dfs_core_windows_net],
+	DATA_SOURCE = [taxidata_testextsynapistor_dfs_core_windows_net],
 	FILE_FORMAT = [SynapseParquetFormat]
 	)
 GO
